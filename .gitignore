@@ -1,8 +1,16 @@
-HELP.md
-target/
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+**/HELP.md
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+
+# Log-uri generale
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 ### STS ###
 .apt_generated
@@ -31,3 +39,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+**/node_modules/
+node_modules/
