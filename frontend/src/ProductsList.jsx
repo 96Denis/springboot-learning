@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { productApi } from "./api/productApi";
+import ConfirmModal from "./ConfirmModal.jsx";
 import ProductCard from "./ProductCard.jsx";
 import ProductSummary from "./ProductSummary.jsx";
 
-function ProductsList({ filtru = "", onSelect, selectedId }) {
+function ProductsList({ filtru = "", refreshKey = 0, onEdit, onNotify }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const abortRef = useRef(null);
+  const snapshotRef = useRef([]);
 
   const loadProducts = useCallback(() => {
     if (abortRef.current) {
@@ -48,11 +51,44 @@ function ProductsList({ filtru = "", onSelect, selectedId }) {
         abortRef.current.abort();
       }
     };
-  }, [loadProducts]);
+  }, [loadProducts, refreshKey]);
 
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(filtru.toLowerCase()),
   );
+
+  const handleDeleteRequest = (product) => {
+    setDeleteTarget(product);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteTarget(null);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    const productToDelete = deleteTarget;
+    snapshotRef.current = products;
+    setDeleteTarget(null);
+    setProducts((current) => current.filter((product) => product.id !== productToDelete.id));
+
+    try {
+      await productApi.remove(productToDelete.id);
+      onNotify?.({
+        type: "success",
+        message: `Produsul "${productToDelete.name}" a fost șters.`,
+      });
+    } catch (error) {
+      setProducts(snapshotRef.current);
+      onNotify?.({
+        type: "error",
+        message: error?.response?.data?.message || error.message || "Ștergerea a eșuat.",
+      });
+    }
+  };
 
   if (loading) {
     return <p className="status">Se încarcă produsele...</p>;
@@ -93,12 +129,23 @@ function ProductsList({ filtru = "", onSelect, selectedId }) {
             <ProductCard
               key={product.id}
               product={product}
-              onSelect={onSelect}
-              selected={selectedId === product.id}
+              onEdit={onEdit}
+              onDelete={handleDeleteRequest}
             />
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={Boolean(deleteTarget)}
+        message={
+          deleteTarget
+            ? `Sigur vrei să ștergi produsul "${deleteTarget.name}"? Această acțiune nu poate fi anulată.`
+            : ""
+        }
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </div>
   );
 }

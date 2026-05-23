@@ -3,8 +3,8 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const AUTH_STORAGE_KEY = "restlab.jwt";
 const AUTH_CREDENTIALS = {
-  username: "user",
-  password: "user123",
+  username: "admin",
+  password: "admin123",
 };
 
 const apiClient = axios.create({
@@ -68,7 +68,7 @@ const requestWithAuth = async (config) => {
       },
     });
   } catch (error) {
-    if (error?.response?.status === 401) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(AUTH_STORAGE_KEY);
       }
@@ -94,6 +94,40 @@ export const productApi = {
   getById: async (id, config) => {
     const response = await requestWithAuth({
       method: "get",
+      url: `/products/${id}`,
+      ...config,
+    });
+    return response.data;
+  },
+  getCategories: async (config) => {
+    const response = await requestWithAuth({
+      method: "get",
+      url: "/categories",
+      ...config,
+    });
+    return response.data;
+  },
+  create: async (payload, config) => {
+    const response = await requestWithAuth({
+      method: "post",
+      url: "/products",
+      data: payload,
+      ...config,
+    });
+    return response.data;
+  },
+  update: async (id, payload, config) => {
+    const response = await requestWithAuth({
+      method: "put",
+      url: `/products/${id}`,
+      data: payload,
+      ...config,
+    });
+    return response.data;
+  },
+  remove: async (id, config) => {
+    const response = await requestWithAuth({
+      method: "delete",
       url: `/products/${id}`,
       ...config,
     });
